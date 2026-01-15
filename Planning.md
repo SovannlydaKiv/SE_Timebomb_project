@@ -11,4 +11,30 @@ The Time Tracker application is designed to help users record and monitor the ti
 3. Selected technologies and finalized basic requirements.
 4. Prepared the structure for implementation in Week 2.
 
-## **Week 2 - UI Planning**
+# Week 2 - Main Feature
+
+## 1. Feature
+### 1.1 System Design
+- **Designed the basic application workflow:**
+        - Start -> Track time -> Stop task -> Save record
+- **Main Component:**
+        - User
+        - Task/Activity
+        - Time Entry
+- **Create simple class/module structure to seperate the logic**
+
+### 1.2 Core Implementation
+- **Task Creation**
+        - User can create tasks with:
+              - Task name
+              - Category
+- **Time Tracking**
+        - Start and stop timer for a selected task
+        - Automatically calculate duration based on start and end time
+- **Data Storage**
+        - Time entries are saved locally (file or database)
+        - Each record includes:
+              - Task name
+              - Start time
+              - End time
+              - Total duration
