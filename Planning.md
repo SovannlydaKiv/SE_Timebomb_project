@@ -1,4 +1,4 @@
-## Week 1 - Planning
+## **Week 1 - Planning**
 
 # Project Overview
 
@@ -11,4 +11,4 @@ The Time Tracker application is designed to help users record and monitor the ti
 3. Selected technologies and finalized basic requirements.
 4. Prepared the structure for implementation in Week 2.
 
-## Week 2 
+## **Week 2 - UI Planning**
