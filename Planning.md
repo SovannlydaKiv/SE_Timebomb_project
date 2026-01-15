@@ -1,6 +1,6 @@
-## **Week 1 - Planning**
+# Week 1 - Planning
 
-# Project Overview
+## Project Overview
 
 The Time Tracker application is designed to help users record and monitor the time spent on different tasks or activities. The system allows users to start and stop timers for tasks, store time records, and view summaries of their daily time usage. The main goal of the application is to improve time management and productivity by providing clear and simple insights into how time is allocated. The application focuses on ease of use, accurate time tracking, and basic reporting, serving as a foundation for future feature expansion.
 
