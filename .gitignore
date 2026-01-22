@@ -1,0 +1,7 @@
+# Compiled output
+bin/
+*.class
+
+# JavaFX SDK (DO NOT COMMIT)
+lib/
+legal/
