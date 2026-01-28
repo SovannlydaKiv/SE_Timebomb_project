@@ -211,11 +211,11 @@ public class TimeEntryDAO {
         Long taskId = rs.getLong("task_id");
         entry.setTask(taskDAO.findById(taskId));
         
-        entry.setStartTime(LocalDateTime.parse(rs.getString("start_time")));
+        entry.setStartTime(LocalDateTime.parse(rs.getString("start_time").replace(" ", "T")));
         
         String endTime = rs.getString("end_time");
         if (endTime != null) {
-            entry.setEndTime(LocalDateTime.parse(endTime));
+            entry.setEndTime(LocalDateTime.parse(endTime.replace(" ", "T")));
         }
         
         Integer durationMinutes = rs.getObject("duration_minutes", Integer.class);

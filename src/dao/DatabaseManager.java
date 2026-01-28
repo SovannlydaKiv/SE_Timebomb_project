@@ -3,14 +3,15 @@ package dao;
 import java.sql.*;
 
 public class DatabaseManager {
-    private static final String DB_HOST = "localhost";
-    private static final String DB_PORT = "3306";
-    private static final String DB_NAME = "timetracker";
-    private static final String DB_USER = "root";
-    private static final String DB_PASSWORD = "password";
+    // Read configuration from environment if available, otherwise fall back to defaults
+    private static String DB_HOST = System.getenv("DB_HOST") != null ? System.getenv("DB_HOST") : "localhost";
+    private static String DB_PORT = System.getenv("DB_PORT") != null ? System.getenv("DB_PORT") : "3306";
+    private static String DB_NAME = System.getenv("DB_NAME") != null ? System.getenv("DB_NAME") : "timetracker";
+    private static String DB_USER = System.getenv("DB_USER") != null ? System.getenv("DB_USER") : "root";
+    private static String DB_PASSWORD = System.getenv("DB_PASSWORD") != null ? System.getenv("DB_PASSWORD") : "password";
 
-    private static final String DB_URL = String.format(
-        "jdbc:mysql://%s:%s/%s?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC", 
+    private static String DB_URL = String.format(
+        "jdbc:mysql://%s:%s/%s?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC",
         DB_HOST, DB_PORT, DB_NAME
     );
 

@@ -1,0 +1,15 @@
+C:\Users\Admin\Documents\y2\Intro_2_SE\project\SE-timebomb\GUI\Page1.java
+C:\Users\Admin\Documents\y2\Intro_2_SE\project\SE-timebomb\src\dao\DatabaseManager.java
+C:\Users\Admin\Documents\y2\Intro_2_SE\project\SE-timebomb\src\dao\ProjectDAO.java
+C:\Users\Admin\Documents\y2\Intro_2_SE\project\SE-timebomb\src\dao\TaskDAO.java
+C:\Users\Admin\Documents\y2\Intro_2_SE\project\SE-timebomb\src\dao\TimeEntryDAO.java
+C:\Users\Admin\Documents\y2\Intro_2_SE\project\SE-timebomb\src\model\Priority.java
+C:\Users\Admin\Documents\y2\Intro_2_SE\project\SE-timebomb\src\model\Project.java
+C:\Users\Admin\Documents\y2\Intro_2_SE\project\SE-timebomb\src\model\ProjectStatus.java
+C:\Users\Admin\Documents\y2\Intro_2_SE\project\SE-timebomb\src\model\Task.java
+C:\Users\Admin\Documents\y2\Intro_2_SE\project\SE-timebomb\src\model\TaskStatus.java
+C:\Users\Admin\Documents\y2\Intro_2_SE\project\SE-timebomb\src\model\TimeEntry.java
+C:\Users\Admin\Documents\y2\Intro_2_SE\project\SE-timebomb\src\service\ProjectService.java
+C:\Users\Admin\Documents\y2\Intro_2_SE\project\SE-timebomb\src\service\ReportService.java
+C:\Users\Admin\Documents\y2\Intro_2_SE\project\SE-timebomb\src\service\TaskService.java
+C:\Users\Admin\Documents\y2\Intro_2_SE\project\SE-timebomb\src\service\TimeEntryService.java
