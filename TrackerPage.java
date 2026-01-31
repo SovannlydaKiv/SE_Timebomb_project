@@ -1,25 +1,27 @@
+import java.awt.*;
 import javax.swing.*;
 import javax.swing.border.*;
-import java.awt.*;
-import java.awt.event.*;
 
-public class Page1 extends JFrame {
+
+public class TrackerPage extends JFrame {
 
     private JLabel timerLabel;
     private boolean running = false;
     private int seconds = 0;
-    private Timer timer;
-
-    // store category buttons
+    private final Timer timer;
     private JButton[] categoryButtons;
-
-    // buttons
     private JButton startPauseBtn;
     private JButton stopBtn;
 
-    public Page1() {
-        setTitle("Time Tracker");
-        setSize(900, 700);
+    public TrackerPage() {
+        setTitle("Time Tracker - Timer");
+        
+        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        int width = (int)(screenSize.width * 0.8);
+        int height = (int)(screenSize.height * 0.8);
+        setSize(width, height);
+        
+        setMinimumSize(new Dimension(600, 600));
         setLocationRelativeTo(null);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
 
@@ -33,13 +35,69 @@ public class Page1 extends JFrame {
     }
 
     private JPanel createHeader() {
-        JPanel header = new JPanel(new FlowLayout(FlowLayout.LEFT, 20, 15));
+        JPanel header = new JPanel(new BorderLayout());
         header.setBackground(Color.WHITE);
+        header.setBorder(new EmptyBorder(15, 20, 15, 20));
 
+        // Left side with icon and title
+        JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 0));
+        leftPanel.setOpaque(false);
+
+        JLabel iconLabel = new JLabel(IconHelper.createClockIcon(24));
         JLabel title = new JLabel("Time Tracker");
         title.setFont(new Font("Segoe UI", Font.BOLD, 22));
 
-        header.add(title);
+        leftPanel.add(iconLabel);
+        leftPanel.add(title);
+
+        // Right side with navigation buttons
+        JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        rightPanel.setOpaque(false);
+
+        JButton trackerBtn = new JButton("Tracker");
+        trackerBtn.setBackground(new Color(59, 130, 246));
+        trackerBtn.setForeground(Color.WHITE);
+        trackerBtn.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        trackerBtn.setFocusPainted(false);
+        trackerBtn.setBorderPainted(false);
+        trackerBtn.setPreferredSize(new Dimension(100, 35));
+        trackerBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        JButton summaryBtn = new JButton("Summary");
+        summaryBtn.setBackground(new Color(229, 231, 235));
+        summaryBtn.setForeground(Color.BLACK);
+        summaryBtn.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        summaryBtn.setFocusPainted(false);
+        summaryBtn.setBorderPainted(false);
+        summaryBtn.setPreferredSize(new Dimension(100, 35));
+        summaryBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        summaryBtn.addActionListener(e -> {
+            dispose();
+            SwingUtilities.invokeLater(() -> new SummaryPage().setVisible(true));
+        });
+
+        JButton logoutBtn = new JButton("Logout");
+        logoutBtn.setBackground(new Color(239, 68, 68));
+        logoutBtn.setForeground(Color.WHITE);
+        logoutBtn.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        logoutBtn.setFocusPainted(false);
+        logoutBtn.setBorderPainted(false);
+        logoutBtn.setPreferredSize(new Dimension(100, 35));
+        logoutBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        logoutBtn.addActionListener(e -> {
+            dispose();
+            SwingUtilities.invokeLater(() -> new LoginPage().setVisible(true));
+        });
+
+        rightPanel.add(trackerBtn);
+        rightPanel.add(summaryBtn);
+        rightPanel.add(logoutBtn);
+
+        header.add(leftPanel, BorderLayout.WEST);
+        header.add(rightPanel, BorderLayout.EAST);
+
         return header;
     }
 
@@ -86,7 +144,7 @@ public class Page1 extends JFrame {
 
         setActiveCategory(categoryButtons[0]);
 
-        // ===== BUTTON PANEL =====
+        // Button panel
         JPanel buttonPanel = new JPanel();
         buttonPanel.setOpaque(false);
 
@@ -181,7 +239,6 @@ public class Page1 extends JFrame {
         btn.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         btn.setBackground(new Color(230, 230, 230));
         btn.setForeground(Color.BLACK);
-
         btn.addActionListener(e -> setActiveCategory(btn));
         return btn;
     }
@@ -195,10 +252,8 @@ public class Page1 extends JFrame {
         selected.setForeground(Color.WHITE);
     }
 
-    // ===== TIMER LOGIC =====
     private void toggleTimer() {
         running = !running;
-
         if (running) {
             timer.start();
             startPauseBtn.setText("Pause Timer");
@@ -225,9 +280,5 @@ public class Page1 extends JFrame {
         int m = (seconds % 3600) / 60;
         int s = seconds % 60;
         timerLabel.setText(String.format("%02d:%02d:%02d", h, m, s));
-    }
-
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new Page1().setVisible(true));
     }
 }
