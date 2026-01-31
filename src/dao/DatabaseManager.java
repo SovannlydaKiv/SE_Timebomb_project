@@ -8,7 +8,7 @@ public class DatabaseManager {
     private static String DB_PORT = System.getenv("DB_PORT") != null ? System.getenv("DB_PORT") : "3306";
     private static String DB_NAME = System.getenv("DB_NAME") != null ? System.getenv("DB_NAME") : "timetracker";
     private static String DB_USER = System.getenv("DB_USER") != null ? System.getenv("DB_USER") : "root";
-    private static String DB_PASSWORD = System.getenv("DB_PASSWORD") != null ? System.getenv("DB_PASSWORD") : "password";
+    private static String DB_PASSWORD = System.getenv("DB_PASSWORD") != null ? System.getenv("DB_PASSWORD") : "usAgil0v3r2468";
 
     private static String DB_URL = String.format(
         "jdbc:mysql://%s:%s/%s?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC",
@@ -35,6 +35,21 @@ public class DatabaseManager {
     private void initializeDatabase() {
         try (Connection conn = getConnection();
                 Statement stmt = conn.createStatement()) {
+            
+            // Create Users table
+            stmt.execute("""
+                CREATE TABLE IF NOT EXISTS users (
+                    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+                    username VARCHAR(100) NOT NULL UNIQUE,
+                    password VARCHAR(255) NOT NULL,
+                    email VARCHAR(255) NOT NULL UNIQUE,
+                    full_name VARCHAR(255),
+                    created_at DATETIME NOT NULL,
+                    updated_at DATETIME NOT NULL,
+                    INDEX idx_username (username),
+                    INDEX idx_email (email)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            """);
             
             // Create Projects table
             stmt.execute("""

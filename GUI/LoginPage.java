@@ -2,13 +2,18 @@ import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.border.*;
+import service.UserService;
+import model.User;
 
 public class LoginPage extends JFrame {
 
     private JTextField usernameField;
     private JPasswordField passwordField;
+    private UserService userService;
 
     public LoginPage() {
+        userService = new UserService();
+        
         setTitle("Time Tracker - Login");
         
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
@@ -90,6 +95,24 @@ public class LoginPage extends JFrame {
         forgotPassword.setForeground(new Color(59, 130, 246));
         forgotPassword.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
+        forgotPassword.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                JOptionPane.showMessageDialog(LoginPage.this,
+                        "Please contact the administrator to reset your password.",
+                        "Forgot Password",
+                        JOptionPane.INFORMATION_MESSAGE);
+            }
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                forgotPassword.setText("<html><u>Forgot password?</u></html>");
+            }
+            @Override
+            public void mouseExited(MouseEvent e) {
+                forgotPassword.setText("Forgot password?");
+            }
+        });
+
         optionsPanel.add(rememberMe, BorderLayout.WEST);
         optionsPanel.add(forgotPassword, BorderLayout.EAST);
 
@@ -154,6 +177,22 @@ public class LoginPage extends JFrame {
         signUp.setFont(new Font("Segoe UI", Font.BOLD, 13));
         signUp.setForeground(new Color(59, 130, 246));
         signUp.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        signUp.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                dispose();
+                SwingUtilities.invokeLater(() -> new SignUpPage().setVisible(true));
+            }
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                signUp.setText("<html><u>Sign up</u></html>");
+            }
+            @Override
+            public void mouseExited(MouseEvent e) {
+                signUp.setText("Sign up");
+            }
+        });
 
         signupPanel.add(noAccount);
         signupPanel.add(signUp);
@@ -229,9 +268,25 @@ public class LoginPage extends JFrame {
             return;
         }
 
-        // Open TrackerPage
-        dispose();
-        SwingUtilities.invokeLater(() -> new TrackerPage().setVisible(true));
+        try {
+            User user = userService.login(username, password);
+            
+            if (user != null) {
+                // Login successful - Open TrackerPage
+                dispose();
+                SwingUtilities.invokeLater(() -> new TrackerPage().setVisible(true));
+            } else {
+                JOptionPane.showMessageDialog(this,
+                        "Invalid username or password.",
+                        "Login Error",
+                        JOptionPane.ERROR_MESSAGE);
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this,
+                    "Connection error. Please check database connection.\n" + e.getMessage(),
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     public static void main(String[] args) {
