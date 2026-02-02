@@ -220,7 +220,7 @@ public class LoginPage extends JFrame {
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         panel.setOpaque(false);
         panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 80));
-        panel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        panel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         JLabel label = new JLabel(labelText);
         label.setFont(new Font("Segoe UI", Font.BOLD, 15));
@@ -231,7 +231,7 @@ public class LoginPage extends JFrame {
         inputField.setBorder(new CompoundBorder(
                 new LineBorder(new Color(209, 213, 219), 1, true),
                 new EmptyBorder(12, 15, 12, 15)));
-        inputField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
+        inputField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 48));
         inputField.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         inputField.addFocusListener(new FocusAdapter() {

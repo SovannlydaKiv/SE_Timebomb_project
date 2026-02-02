@@ -35,9 +35,10 @@ public class SignUpPage extends JFrame {
     }
 
     private JPanel createMainPanel() {
-        JPanel wrapper = new JPanel(new GridBagLayout());
+        JPanel wrapper = new JPanel(new BorderLayout());
         wrapper.setOpaque(false);
-        wrapper.add(createSignUpCard());
+        wrapper.setBorder(new EmptyBorder(30, 40, 30, 40));
+        wrapper.add(createSignUpCard(), BorderLayout.CENTER);
         return wrapper;
     }
 
@@ -47,9 +48,7 @@ public class SignUpPage extends JFrame {
         card.setBackground(Color.WHITE);
         card.setBorder(new CompoundBorder(
                 new LineBorder(new Color(229, 231, 235), 1, true),
-                new EmptyBorder(40, 50, 40, 50)));
-        card.setPreferredSize(new Dimension(480, 700));
-        card.setMaximumSize(new Dimension(480, 700));
+                new EmptyBorder(40, 40, 40, 40)));
 
         // Header
         JPanel headerPanel = new JPanel();
@@ -192,18 +191,18 @@ public class SignUpPage extends JFrame {
         card.add(signUpButton);
         card.add(Box.createVerticalStrut(20));
         card.add(dividerPanel);
-        card.add(Box.createVerticalStrut(20));
+        card.add(Box.createVerticalStrut(15));
         card.add(signinPanel);
 
         return card;
     }
 
-    private JPanel createInputPanel(String labelText, JTextField inputField) {
+        private JPanel createInputPanel(String labelText, JTextField inputField) {
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         panel.setOpaque(false);
-        panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 75));
-        panel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 80));
+        panel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         JLabel label = new JLabel(labelText);
         label.setFont(new Font("Segoe UI", Font.BOLD, 14));
@@ -214,7 +213,7 @@ public class SignUpPage extends JFrame {
         inputField.setBorder(new CompoundBorder(
                 new LineBorder(new Color(209, 213, 219), 1, true),
                 new EmptyBorder(10, 12, 10, 12)));
-        inputField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
+        inputField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 48));
         inputField.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         inputField.addFocusListener(new FocusAdapter() {
