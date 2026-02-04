@@ -57,6 +57,20 @@ public class SummaryPage extends JFrame {
             SwingUtilities.invokeLater(() -> new TrackerPage().setVisible(true));
         });
 
+        JButton createProjectBtn = new JButton("Create Project");
+        createProjectBtn.setBackground(new Color(59, 130, 246));
+        createProjectBtn.setForeground(Color.WHITE);
+        createProjectBtn.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        createProjectBtn.setFocusPainted(false);
+        createProjectBtn.setBorderPainted(false);
+        createProjectBtn.setPreferredSize(new Dimension(140, 35));
+        createProjectBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        createProjectBtn.addActionListener(e -> {
+            dispose();
+            SwingUtilities.invokeLater(() -> new ProjectGUI().setVisible(true));
+        });
+
         JButton summaryBtn = new JButton("Summary");
         summaryBtn.setBackground(new Color(59, 130, 246));
         summaryBtn.setForeground(Color.WHITE);
@@ -80,6 +94,7 @@ public class SummaryPage extends JFrame {
             SwingUtilities.invokeLater(() -> new LoginPage().setVisible(true));
         });
 
+        rightPanel.add(createProjectBtn);
         rightPanel.add(trackerBtn);
         rightPanel.add(summaryBtn);
         rightPanel.add(logoutBtn);

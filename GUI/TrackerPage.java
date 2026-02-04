@@ -12,6 +12,11 @@ public class TrackerPage extends JFrame {
     private JButton[] categoryButtons;
     private JButton startPauseBtn;
     private JButton stopBtn;
+    // user info
+    private String username = "User";
+    private String email = "user@example.com";
+    private JLabel usernameLabel;
+    private JLabel emailLabel;
 
     public TrackerPage() {
         setTitle("Time Tracker - Timer");
@@ -27,6 +32,9 @@ public class TrackerPage extends JFrame {
 
         setLayout(new BorderLayout());
         getContentPane().setBackground(new Color(245, 247, 250));
+        // load current session user
+        username = UserSession.getUsername();
+        email = UserSession.getEmail();
 
         add(createHeader(), BorderLayout.NORTH);
         add(createMainPanel(), BorderLayout.CENTER);
@@ -50,9 +58,40 @@ public class TrackerPage extends JFrame {
         leftPanel.add(iconLabel);
         leftPanel.add(title);
 
-        // Right side with navigation buttons
+        // Right side with user info + navigation buttons
         JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         rightPanel.setOpaque(false);
+
+        // Small user info box (username + email + edit)
+        JPanel userBox = new JPanel();
+        userBox.setLayout(new BoxLayout(userBox, BoxLayout.Y_AXIS));
+        userBox.setOpaque(true);
+        userBox.setBackground(new Color(250, 250, 250));
+        userBox.setBorder(new CompoundBorder(new LineBorder(new Color(220,220,220),1), new EmptyBorder(6,8,6,8)));
+
+        usernameLabel = new JLabel(UserSession.getUsername());
+        usernameLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        emailLabel = new JLabel(UserSession.getEmail());
+        emailLabel.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+
+        JPanel userRow = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
+        userRow.setOpaque(false);
+        userRow.add(usernameLabel);
+        userRow.add(new JLabel(" - "));
+        userRow.add(emailLabel);
+
+        JButton editUserBtn = new JButton("Edit");
+        editUserBtn.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        editUserBtn.setPreferredSize(new Dimension(60, 26));
+        editUserBtn.setFocusPainted(false);
+        editUserBtn.addActionListener(e -> openEditUserDialog());
+
+        JPanel userAndEdit = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
+        userAndEdit.setOpaque(false);
+        userAndEdit.add(userRow);
+        userAndEdit.add(editUserBtn);
+
+        userBox.add(userAndEdit);
 
         JButton trackerBtn = new JButton("Tracker");
         trackerBtn.setBackground(new Color(59, 130, 246));
@@ -91,6 +130,7 @@ public class TrackerPage extends JFrame {
             SwingUtilities.invokeLater(() -> new LoginPage().setVisible(true));
         });
 
+        rightPanel.add(userBox);
         rightPanel.add(trackerBtn);
         rightPanel.add(summaryBtn);
         rightPanel.add(logoutBtn);
@@ -99,6 +139,53 @@ public class TrackerPage extends JFrame {
         header.add(rightPanel, BorderLayout.EAST);
 
         return header;
+    }
+
+    private void openEditUserDialog() {
+        JDialog dlg = new JDialog(this, "Edit Profile", true);
+        dlg.setSize(360, 180);
+        dlg.setLocationRelativeTo(this);
+        dlg.setLayout(new BorderLayout());
+
+        JPanel p = new JPanel();
+        p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
+        p.setBorder(new EmptyBorder(12, 12, 12, 12));
+
+        JTextField userField = new JTextField(username);
+        JTextField emailFieldInput = new JTextField(email);
+
+        p.add(new JLabel("Username"));
+        p.add(userField);
+        p.add(Box.createVerticalStrut(8));
+        p.add(new JLabel("Email"));
+        p.add(emailFieldInput);
+
+        JPanel btns = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JButton save = new JButton("Save");
+        JButton cancel = new JButton("Cancel");
+
+        save.addActionListener(ae -> {
+            String newUser = userField.getText().trim();
+            String newEmail = emailFieldInput.getText().trim();
+            if (!newUser.isEmpty() && !newEmail.isEmpty()) {
+                username = newUser;
+                email = newEmail;
+                usernameLabel.setText(username);
+                emailLabel.setText(email);
+                // persist to session
+                UserSession.set(username, email);
+            }
+            dlg.dispose();
+        });
+
+        cancel.addActionListener(ae -> dlg.dispose());
+
+        btns.add(cancel);
+        btns.add(save);
+
+        dlg.add(p, BorderLayout.CENTER);
+        dlg.add(btns, BorderLayout.SOUTH);
+        dlg.setVisible(true);
     }
 
     private JPanel createMainPanel() {

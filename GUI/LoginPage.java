@@ -34,7 +34,14 @@ public class LoginPage extends JFrame {
     private JPanel createMainPanel() {
         JPanel wrapper = new JPanel(new GridBagLayout());
         wrapper.setOpaque(false);
-        wrapper.add(createLoginCard());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 1.0;
+        gbc.weighty = 1.0;
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.anchor = GridBagConstraints.CENTER;
+        wrapper.add(createLoginCard(), gbc);
         return wrapper;
     }
 
@@ -43,10 +50,12 @@ public class LoginPage extends JFrame {
         card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
         card.setBackground(Color.WHITE);
         card.setBorder(new CompoundBorder(
-                new LineBorder(new Color(229, 231, 235), 1, true),
-                new EmptyBorder(50, 50, 50, 50)));
-        card.setPreferredSize(new Dimension(480, 600));
-        card.setMaximumSize(new Dimension(480, 600));
+            new LineBorder(new Color(229, 231, 235), 1, true),
+            new EmptyBorder(24, 20, 24, 20)));
+        card.setAlignmentX(Component.CENTER_ALIGNMENT);
+        card.setMinimumSize(new Dimension(360, 300));
+        card.setPreferredSize(new Dimension(700, 640));
+        card.setMaximumSize(new Dimension(700, Integer.MAX_VALUE));
 
         // Header
         JPanel headerPanel = new JPanel();
@@ -124,7 +133,8 @@ public class LoginPage extends JFrame {
         loginButton.setFocusPainted(false);
         loginButton.setBorderPainted(false);
         loginButton.setAlignmentX(Component.CENTER_ALIGNMENT);
-        loginButton.setMaximumSize(new Dimension(Integer.MAX_VALUE, 45));
+        loginButton.setPreferredSize(new Dimension(260, 45));
+        loginButton.setMaximumSize(new Dimension(320, 45));
         loginButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         
         loginButton.addMouseListener(new MouseAdapter() {
@@ -220,18 +230,18 @@ public class LoginPage extends JFrame {
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         panel.setOpaque(false);
         panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 80));
-        panel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        panel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         JLabel label = new JLabel(labelText);
         label.setFont(new Font("Segoe UI", Font.BOLD, 15));
         label.setForeground(new Color(55, 65, 81));
-        label.setAlignmentX(Component.LEFT_ALIGNMENT);
+        label.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         inputField.setFont(new Font("Segoe UI", Font.PLAIN, 15));
         inputField.setBorder(new CompoundBorder(
                 new LineBorder(new Color(209, 213, 219), 1, true),
                 new EmptyBorder(12, 15, 12, 15)));
-        inputField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 48));
+        inputField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
         inputField.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         inputField.addFocusListener(new FocusAdapter() {
@@ -268,25 +278,9 @@ public class LoginPage extends JFrame {
             return;
         }
 
-        try {
-            User user = userService.login(username, password);
-            
-            if (user != null) {
-                // Login successful - Open TrackerPage
-                dispose();
-                SwingUtilities.invokeLater(() -> new TrackerPage().setVisible(true));
-            } else {
-                JOptionPane.showMessageDialog(this,
-                        "Invalid username or password.",
-                        "Login Error",
-                        JOptionPane.ERROR_MESSAGE);
-            }
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this,
-                    "Connection error. Please check database connection.\n" + e.getMessage(),
-                    "Error",
-                    JOptionPane.ERROR_MESSAGE);
-        }
+        // Open TrackerPage
+        dispose();
+        SwingUtilities.invokeLater(() -> new TrackerPage().setVisible(true));
     }
 
     public static void main(String[] args) {
