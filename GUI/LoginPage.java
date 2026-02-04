@@ -1,5 +1,6 @@
 import java.awt.*;
 import java.awt.event.*;
+import java.util.prefs.Preferences;
 import javax.swing.*;
 import javax.swing.border.*;
 import service.UserService;
@@ -9,10 +10,16 @@ public class LoginPage extends JFrame {
 
     private JTextField usernameField;
     private JPasswordField passwordField;
+    private JCheckBox rememberMeCheckbox;
     private UserService userService;
+    private Preferences prefs;
+    
+    private static final String PREF_REMEMBER_ME = "rememberMe";
+    private static final String PREF_USERNAME = "savedUsername";
 
     public LoginPage() {
         userService = new UserService();
+        prefs = Preferences.userNodeForPackage(LoginPage.class);
         
         setTitle("Time Tracker - Login");
         
@@ -32,16 +39,10 @@ public class LoginPage extends JFrame {
     }
 
     private JPanel createMainPanel() {
-        JPanel wrapper = new JPanel(new GridBagLayout());
+        JPanel wrapper = new JPanel(new BorderLayout());
         wrapper.setOpaque(false);
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        gbc.weightx = 1.0;
-        gbc.weighty = 1.0;
-        gbc.fill = GridBagConstraints.BOTH;
-        gbc.anchor = GridBagConstraints.CENTER;
-        wrapper.add(createLoginCard(), gbc);
+        wrapper.setBorder(new EmptyBorder(10, 10, 10, 10)); // Small padding from edges
+        wrapper.add(createLoginCard(), BorderLayout.CENTER);
         return wrapper;
     }
 
@@ -51,17 +52,13 @@ public class LoginPage extends JFrame {
         card.setBackground(Color.WHITE);
         card.setBorder(new CompoundBorder(
             new LineBorder(new Color(229, 231, 235), 1, true),
-            new EmptyBorder(24, 20, 24, 20)));
-        card.setAlignmentX(Component.CENTER_ALIGNMENT);
-        card.setMinimumSize(new Dimension(360, 300));
-        card.setPreferredSize(new Dimension(700, 640));
-        card.setMaximumSize(new Dimension(700, Integer.MAX_VALUE));
+            new EmptyBorder(24, 30, 24, 30))); // Increased horizontal padding inside card
 
         // Header
         JPanel headerPanel = new JPanel();
         headerPanel.setLayout(new BoxLayout(headerPanel, BoxLayout.Y_AXIS));
         headerPanel.setOpaque(false);
-        headerPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        headerPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         JLabel iconLabel = new JLabel(IconHelper.createClockIcon(48));
         iconLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -93,11 +90,22 @@ public class LoginPage extends JFrame {
         JPanel optionsPanel = new JPanel(new BorderLayout());
         optionsPanel.setOpaque(false);
         optionsPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
+        optionsPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JCheckBox rememberMe = new JCheckBox("Remember me");
-        rememberMe.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        rememberMe.setOpaque(false);
-        rememberMe.setFocusPainted(false);
+        rememberMeCheckbox = new JCheckBox("Remember me");
+        rememberMeCheckbox.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        rememberMeCheckbox.setOpaque(false);
+        rememberMeCheckbox.setFocusPainted(false);
+        
+        // Load saved preferences
+        boolean remembered = prefs.getBoolean(PREF_REMEMBER_ME, false);
+        rememberMeCheckbox.setSelected(remembered);
+        if (remembered) {
+            String savedUsername = prefs.get(PREF_USERNAME, "");
+            usernameField.setText(savedUsername);
+            // Focus on password field if username is pre-filled
+            SwingUtilities.invokeLater(() -> passwordField.requestFocusInWindow());
+        }
 
         JLabel forgotPassword = new JLabel("Forgot password?");
         forgotPassword.setFont(new Font("Segoe UI", Font.PLAIN, 13));
@@ -122,7 +130,7 @@ public class LoginPage extends JFrame {
             }
         });
 
-        optionsPanel.add(rememberMe, BorderLayout.WEST);
+        optionsPanel.add(rememberMeCheckbox, BorderLayout.WEST);
         optionsPanel.add(forgotPassword, BorderLayout.EAST);
 
         // Login button
@@ -132,9 +140,9 @@ public class LoginPage extends JFrame {
         loginButton.setFont(new Font("Segoe UI", Font.BOLD, 15));
         loginButton.setFocusPainted(false);
         loginButton.setBorderPainted(false);
-        loginButton.setAlignmentX(Component.CENTER_ALIGNMENT);
-        loginButton.setPreferredSize(new Dimension(260, 45));
-        loginButton.setMaximumSize(new Dimension(320, 45));
+        loginButton.setAlignmentX(Component.LEFT_ALIGNMENT);
+        loginButton.setPreferredSize(new Dimension(Integer.MAX_VALUE, 45));
+        loginButton.setMaximumSize(new Dimension(Integer.MAX_VALUE, 45));
         loginButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         
         loginButton.addMouseListener(new MouseAdapter() {
@@ -155,7 +163,7 @@ public class LoginPage extends JFrame {
         dividerPanel.setLayout(new BoxLayout(dividerPanel, BoxLayout.X_AXIS));
         dividerPanel.setOpaque(false);
         dividerPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
-        dividerPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        dividerPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         JSeparator leftLine = new JSeparator(SwingConstants.HORIZONTAL);
         leftLine.setMaximumSize(new Dimension(Integer.MAX_VALUE, 1));
@@ -178,6 +186,7 @@ public class LoginPage extends JFrame {
         JPanel signupPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 0));
         signupPanel.setOpaque(false);
         signupPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
+        signupPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         JLabel noAccount = new JLabel("Don't have an account?");
         noAccount.setFont(new Font("Segoe UI", Font.PLAIN, 13));
@@ -235,13 +244,13 @@ public class LoginPage extends JFrame {
         JLabel label = new JLabel(labelText);
         label.setFont(new Font("Segoe UI", Font.BOLD, 15));
         label.setForeground(new Color(55, 65, 81));
-        label.setAlignmentX(Component.CENTER_ALIGNMENT);
+        label.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         inputField.setFont(new Font("Segoe UI", Font.PLAIN, 15));
         inputField.setBorder(new CompoundBorder(
                 new LineBorder(new Color(209, 213, 219), 1, true),
                 new EmptyBorder(12, 15, 12, 15)));
-        inputField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
+        inputField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 48));
         inputField.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         inputField.addFocusListener(new FocusAdapter() {
@@ -278,7 +287,28 @@ public class LoginPage extends JFrame {
             return;
         }
 
-        // Open TrackerPage
+        // Authenticate against database using UserService
+        User user = userService.login(username, password);
+
+        if (user == null) {
+            JOptionPane.showMessageDialog(this,
+                    "Invalid username or password.",
+                    "Login Error",
+                    JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        // Save Remember Me preference
+        if (rememberMeCheckbox.isSelected()) {
+            prefs.putBoolean(PREF_REMEMBER_ME, true);
+            prefs.put(PREF_USERNAME, username);
+        } else {
+            prefs.putBoolean(PREF_REMEMBER_ME, false);
+            prefs.remove(PREF_USERNAME);
+        }
+
+        // Login successful - store user info in session
+        UserSession.setCurrentUser(user);
         dispose();
         SwingUtilities.invokeLater(() -> new TrackerPage().setVisible(true));
     }

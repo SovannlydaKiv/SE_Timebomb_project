@@ -15,26 +15,27 @@ public class ProjectDAO {
         this.dbManager = DatabaseManager.getInstance();
     }
 
-    public Project save(Project project) throws SQLException {
+    public Project save(Project project, Long userId) throws SQLException {
         String sql = """
-            INSERT INTO projects (name, description, color_code, client, status, 
+            INSERT INTO projects (user_id, name, description, color_code, client, status, 
                                 hourly_rate, budget, deadline, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """;
         
         try (Connection conn = dbManager.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             
-            pstmt.setString(1, project.getName());
-            pstmt.setString(2, project.getDescription());
-            pstmt.setString(3, project.getColorCode());
-            pstmt.setString(4, project.getClient());
-            pstmt.setString(5, project.getStatus().name());
-            pstmt.setObject(6, project.getHourlyRate());
-            pstmt.setObject(7, project.getBudget());
-            pstmt.setString(8, project.getDeadLine() != null ? project.getDeadLine().toString() : null);
-            pstmt.setString(9, project.getCreatedAt().toString());
-            pstmt.setString(10, LocalDateTime.now().toString());
+            pstmt.setLong(1, userId);
+            pstmt.setString(2, project.getName());
+            pstmt.setString(3, project.getDescription());
+            pstmt.setString(4, project.getColorCode());
+            pstmt.setString(5, project.getClient());
+            pstmt.setString(6, project.getStatus().name());
+            pstmt.setObject(7, project.getHourlyRate());
+            pstmt.setObject(8, project.getBudget());
+            pstmt.setString(9, project.getDeadLine() != null ? project.getDeadLine().toString() : null);
+            pstmt.setString(10, project.getCreatedAt().toString());
+            pstmt.setString(11, LocalDateTime.now().toString());
             
             pstmt.executeUpdate();
             
@@ -64,29 +65,33 @@ public class ProjectDAO {
         return null;
     }
     
-    public List<Project> findAll() throws SQLException {
+    public List<Project> findAllByUser(Long userId) throws SQLException {
         List<Project> projects = new ArrayList<>();
-        String sql = "SELECT * FROM projects ORDER BY created_at DESC";
+        String sql = "SELECT * FROM projects WHERE user_id = ? ORDER BY created_at DESC";
         
         try (Connection conn = dbManager.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
             
-            while (rs.next()) {
-                projects.add(mapResultSetToProject(rs));
+            pstmt.setLong(1, userId);
+            
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    projects.add(mapResultSetToProject(rs));
+                }
             }
         }
         return projects;
     }
     
-    public List<Project> findByStatus(ProjectStatus status) throws SQLException {
+    public List<Project> findByStatusAndUser(ProjectStatus status, Long userId) throws SQLException {
         List<Project> projects = new ArrayList<>();
-        String sql = "SELECT * FROM projects WHERE status = ? ORDER BY created_at DESC";
+        String sql = "SELECT * FROM projects WHERE status = ? AND user_id = ? ORDER BY created_at DESC";
         
         try (Connection conn = dbManager.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             
             pstmt.setString(1, status.name());
+            pstmt.setLong(2, userId);
             
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {

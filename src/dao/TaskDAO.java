@@ -18,8 +18,8 @@ public class TaskDAO {
     public Task save(Task task) throws SQLException {
         String sql = """
             INSERT INTO tasks (name, description, project_id, priority, status, 
-                             estimated_minutes, due_date, billable, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                             estimated_minutes, due_date, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """;
 
         try (Connection conn = dbManager.getConnection();
@@ -32,9 +32,8 @@ public class TaskDAO {
             pstmt.setString(5, task.getStatus().name());
             pstmt.setObject(6, task.getEstimationMinutes());
             pstmt.setString(7, task.getDueDate() != null ? task.getDueDate().toString() : null);
-            pstmt.setInt(8, task.getBillable() ? 1 : 0);
-            pstmt.setString(9, task.getCreatedAt().toString());
-            pstmt.setString(10, LocalDateTime.now().toString());
+            pstmt.setString(8, task.getCreatedAt().toString());
+            pstmt.setString(9, LocalDateTime.now().toString());
             
             pstmt.executeUpdate();
             
@@ -175,7 +174,7 @@ public class TaskDAO {
         String sql = """
             UPDATE tasks 
             SET name = ?, description = ?, project_id = ?, priority = ?, status = ?,
-                estimated_minutes = ?, due_date = ?, billable = ?, updated_at = ?
+                estimated_minutes = ?, due_date = ?, updated_at = ?
             WHERE id = ?
         """;
         
@@ -189,9 +188,8 @@ public class TaskDAO {
             pstmt.setString(5, task.getStatus().name());
             pstmt.setObject(6, task.getEstimationMinutes());
             pstmt.setString(7, task.getDueDate() != null ? task.getDueDate().toString() : null);
-            pstmt.setInt(8, task.getBillable() ? 1 : 0);
-            pstmt.setString(9, LocalDateTime.now().toString());
-            pstmt.setLong(10, task.getId());
+            pstmt.setString(8, LocalDateTime.now().toString());
+            pstmt.setLong(9, task.getId());
             
             pstmt.executeUpdate();
             
@@ -276,10 +274,8 @@ public class TaskDAO {
         
         String dueDate = rs.getString("due_date");
         if (dueDate != null) {
-            task.setDueDate(LocalDateTime.parse(dueDate));
+            task.setDueDate(LocalDateTime.parse(dueDate.replace(" ", "T")));
         }
-        
-        task.setBillable(rs.getInt("billable") == 1);
         
         return task;
     }

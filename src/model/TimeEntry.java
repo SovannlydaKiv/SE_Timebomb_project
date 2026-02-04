@@ -84,6 +84,16 @@ public class TimeEntry {
         this.durationMinutes = durationMinutes;
     }
 
+    public String getDescription()
+    {
+        return description;
+    }
+
+    public void setDescription(String description)
+    {
+        this.description = description;
+    }
+
     public String getNotes()
     {
         return note;
@@ -149,6 +159,23 @@ public class TimeEntry {
         int hours = durationMinutes / 60;
         int mins = durationMinutes % 60;
         return String.format("%dh %dm", hours, mins);
+    }
+    
+    // Get duration in seconds for accurate display
+    public long getDurationSeconds() {
+        if (startTime != null && endTime != null) {
+            return Duration.between(startTime, endTime).getSeconds();
+        }
+        return durationMinutes != null ? durationMinutes * 60L : 0;
+    }
+    
+    // Get formatted duration as HH:MM:SS
+    public String getFormattedDurationHMS() {
+        long totalSeconds = getDurationSeconds();
+        int h = (int) (totalSeconds / 3600);
+        int m = (int) ((totalSeconds % 3600) / 60);
+        int s = (int) (totalSeconds % 60);
+        return String.format("%02d:%02d:%02d", h, m, s);
     }
 
     @Override

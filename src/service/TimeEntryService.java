@@ -17,7 +17,7 @@ public class TimeEntryService {
         this.taskDAO = new TaskDAO();
     }
 
-    public TimeEntry startTimer(Long taskId) throws SQLException {
+    public TimeEntry startTimer(Long taskId, Long userId) throws SQLException {
         TimeEntry runningEntry = timeEntryDAO.findRunningEntry();
         if (runningEntry != null) {
             stopTimer(runningEntry.getId());
@@ -30,7 +30,7 @@ public class TimeEntryService {
 
         TimeEntry entry = new TimeEntry(task, LocalDateTime.now());
         entry.setBillable(task.getBillable());
-        return timeEntryDAO.save(entry);
+        return timeEntryDAO.save(entry, userId);
     }
 
     public TimeEntry stopTimer(Long entryId) throws SQLException {
@@ -52,7 +52,7 @@ public class TimeEntryService {
         return timeEntryDAO.findRunningEntry();
     }
 
-    public TimeEntry addManualEntry(Long taskId, LocalDateTime start, LocalDateTime end, String notes) throws SQLException {
+    public TimeEntry addManualEntry(Long taskId, LocalDateTime start, LocalDateTime end, String notes, Long userId) throws SQLException {
         Task task = taskDAO.findById(taskId);
         if (task == null) {
             throw new IllegalArgumentException("Task not found with id: " + taskId);
@@ -66,23 +66,23 @@ public class TimeEntryService {
         entry.setBillable(task.getBillable());
         entry.setIsRunning(false);
 
-        return timeEntryDAO.save(entry);
+        return timeEntryDAO.save(entry, userId);
     }
 
     public TimeEntry getTimeEntry(Long id) throws SQLException {
         return timeEntryDAO.findById(id);
     }
 
-    public List<TimeEntry> getAllTimeEntry(Long id) throws SQLException {
-        return timeEntryDAO.findAll();
+    public List<TimeEntry> getAllTimeEntry(Long userId) throws SQLException {
+        return timeEntryDAO.findAllByUser(userId);
     }
 
     public List<TimeEntry> getTimeEntryByTask (Long taskId) throws SQLException {
         return timeEntryDAO.findByTaskId(taskId);
     }
 
-    public List<TimeEntry> getTimeEntryByDateRange(LocalDateTime start, LocalDateTime end) throws SQLException {
-        return timeEntryDAO.findByDateRange(start, end);
+    public List<TimeEntry> getTimeEntryByDateRange(LocalDateTime start, LocalDateTime end, Long userId) throws SQLException {
+        return timeEntryDAO.findByDateRangeAndUser(start, end, userId);
     }
 
     public void updateTimeEntry(TimeEntry entry) throws SQLException {
@@ -95,9 +95,57 @@ public class TimeEntryService {
     public void deleteTimeEntry(Long id) throws SQLException {
         timeEntryDAO.delete(id);
     }
+    
+    public List<TimeEntry> getRecentEntries(int limit, Long userId) throws SQLException {
+        List<TimeEntry> allEntries = timeEntryDAO.findAllByUser(userId);
+        if (allEntries.size() <= limit) {
+            return allEntries;
+        }
+        return allEntries.subList(0, limit);
+    }
+    
+    // Save a completed time entry with duration (for personal entries, taskId can be null)
+    public TimeEntry saveTimeEntry(Long taskId, String description, int durationSeconds, Long userId) throws SQLException {
+        TimeEntry entry = new TimeEntry();
+        
+        if (taskId != null) {
+            Task task = taskDAO.findById(taskId);
+            if (task != null) {
+                entry.setTask(task);
+                entry.setBillable(task.getBillable());
+            }
+        } else {
+            entry.setBillable(false);
+        }
+        
+        LocalDateTime now = LocalDateTime.now();
+        entry.setStartTime(now.minusSeconds(durationSeconds));
+        entry.setEndTime(now);
+        entry.setDescription(description);
+        entry.setDurationMinutes(durationSeconds / 60);
+        entry.setIsRunning(false);
+        
+        return timeEntryDAO.save(entry, userId);
+    }
+    
+    public TimeEntry startTimeEntry(Long taskId, String description, Long userId) throws SQLException {
+        Task task = taskDAO.findById(taskId);
+        if (task == null) {
+            throw new IllegalArgumentException("Task not found with id: " + taskId);
+        }
+        
+        TimeEntry entry = new TimeEntry();
+        entry.setTask(task);
+        entry.setStartTime(LocalDateTime.now());
+        entry.setDescription(description);
+        entry.setBillable(task.getBillable());
+        entry.setIsRunning(true);
+        
+        return timeEntryDAO.save(entry, userId);
+    }
 
-    public TimeSummary getTimeSummary(LocalDateTime start, LocalDateTime end) throws SQLException {
-        List<TimeEntry> entries = timeEntryDAO.findByDateRange(start, end);
+    public TimeSummary getTimeSummary(LocalDateTime start, LocalDateTime end, Long userId) throws SQLException {
+        List<TimeEntry> entries = timeEntryDAO.findByDateRangeAndUser(start, end, userId);
 
         int totalMinutes = 0;
         int billableMinutes = 0;

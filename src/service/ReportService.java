@@ -20,7 +20,7 @@ public class ReportService {
         this.projectDAO = new ProjectDAO();
     }
 
-    public String generateOverallReport(LocalDateTime start, LocalDateTime end) throws SQLException {
+    public String generateOverallReport(LocalDateTime start, LocalDateTime end, Long userId) throws SQLException {
         StringBuilder report = new StringBuilder();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
@@ -30,7 +30,7 @@ public class ReportService {
         report.append("Period: ").append(start.format(formatter))
               .append(" to ").append(end.format(formatter)).append("\n\n");
 
-        List<TimeEntry> entries = timeEntryDAO.findByDateRange(start, end);
+        List<TimeEntry> entries = timeEntryDAO.findByDateRangeAndUser(start, end, userId);
 
         int totalMinutes = 0;
         int billableMinutes = 0;
@@ -122,14 +122,14 @@ public class ReportService {
         return report.toString();
     }
 
-    public Map<String, Object> getStatistics() throws SQLException {
+    public Map<String, Object> getStatistics(Long userId) throws SQLException {
         Map<String, Object> stats = new HashMap<>();
         
-        stats.put("totalProjects", projectDAO.findAll().size());
-        stats.put("activeProjects", projectDAO.findByStatus(ProjectStatus.ACTIVE).size());
+        stats.put("totalProjects", projectDAO.findAllByUser(userId).size());
+        stats.put("activeProjects", projectDAO.findByStatusAndUser(ProjectStatus.ACTIVE, userId).size());
         stats.put("totalTasks", taskDAO.findAll().size());
         stats.put("completedTasks", taskDAO.findByStatus(TaskStatus.COMPLETED).size());
-        stats.put("totalTimeEntries", timeEntryDAO.findAll().size());
+        stats.put("totalTimeEntries", timeEntryDAO.findAllByUser(userId).size());
         
         TimeEntry runningTimer = timeEntryDAO.findRunningEntry();
         stats.put("hasRunningTimer", runningTimer != null);
