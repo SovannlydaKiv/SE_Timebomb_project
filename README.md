@@ -1,4 +1,4 @@
-# Time Tracker v3.0
+# Time Tracker v1.0
 
 A comprehensive Java-based desktop application for tracking time spent on projects and tasks, designed to help users improve productivity through detailed time analysis and reporting.
 
