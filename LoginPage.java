@@ -255,7 +255,28 @@ public class LoginPage extends JFrame {
             return;
         }
 
-        // Open TrackerPage
+        // Validate against session-stored credentials (simple local check)
+        String storedUser = UserSession.getUsername();
+        String storedPass = UserSession.getPassword();
+
+        if (storedUser.isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                    "No user registered yet. Please sign up first.",
+                    "Login Error",
+                    JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        if (!username.equals(storedUser) || !password.equals(storedPass)) {
+            JOptionPane.showMessageDialog(this,
+                    "Invalid username or password.",
+                    "Login Error",
+                    JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        // Login successful
+        UserSession.setUsername(username);
         dispose();
         SwingUtilities.invokeLater(() -> new TrackerPage().setVisible(true));
     }
