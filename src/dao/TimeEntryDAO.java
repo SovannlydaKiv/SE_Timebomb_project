@@ -15,25 +15,33 @@ public class TimeEntryDAO {
         this.taskDAO = new TaskDAO();
     }
     
-    public TimeEntry save(TimeEntry entry) throws SQLException {
+    public TimeEntry save(TimeEntry entry, Long userId) throws SQLException {
         String sql = """
-            INSERT INTO time_entries (task_id, start_time, end_time, duration_minutes, 
+            INSERT INTO time_entries (user_id, task_id, start_time, end_time, duration_minutes, 
                                     notes, billable, is_running, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """;
         
         try (Connection conn = dbManager.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             
-            pstmt.setLong(1, entry.getTask().getId());
-            pstmt.setString(2, entry.getStartTime().toString());
-            pstmt.setString(3, entry.getEndTime() != null ? entry.getEndTime().toString() : null);
-            pstmt.setObject(4, entry.getDurationMinutes());
-            pstmt.setString(5, entry.getNotes());
-            pstmt.setInt(6, entry.getBillable() ? 1 : 0);
-            pstmt.setInt(7, entry.getIsRunning() ? 1 : 0);
-            pstmt.setString(8, entry.getCreatedAt().toString());
-            pstmt.setString(9, LocalDateTime.now().toString());
+            pstmt.setLong(1, userId);
+            // Handle null task for personal entries
+            if (entry.getTask() != null) {
+                pstmt.setLong(2, entry.getTask().getId());
+            } else {
+                pstmt.setNull(2, java.sql.Types.BIGINT);
+            }
+            pstmt.setString(3, entry.getStartTime().toString());
+            pstmt.setString(4, entry.getEndTime() != null ? entry.getEndTime().toString() : null);
+            pstmt.setObject(5, entry.getDurationMinutes());
+            // Store description in notes field
+            String notes = entry.getDescription() != null ? entry.getDescription() : entry.getNotes();
+            pstmt.setString(6, notes);
+            pstmt.setInt(7, entry.getBillable() ? 1 : 0);
+            pstmt.setInt(8, entry.getIsRunning() ? 1 : 0);
+            pstmt.setString(9, entry.getCreatedAt().toString());
+            pstmt.setString(10, LocalDateTime.now().toString());
             
             pstmt.executeUpdate();
             
@@ -63,16 +71,19 @@ public class TimeEntryDAO {
         return null;
     }
     
-    public List<TimeEntry> findAll() throws SQLException {
+    public List<TimeEntry> findAllByUser(Long userId) throws SQLException {
         List<TimeEntry> entries = new ArrayList<>();
-        String sql = "SELECT * FROM time_entries ORDER BY start_time DESC";
+        String sql = "SELECT * FROM time_entries WHERE user_id = ? ORDER BY start_time DESC";
         
         try (Connection conn = dbManager.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
             
-            while (rs.next()) {
-                entries.add(mapResultSetToTimeEntry(rs));
+            pstmt.setLong(1, userId);
+            
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    entries.add(mapResultSetToTimeEntry(rs));
+                }
             }
         }
         return entries;
@@ -110,15 +121,16 @@ public class TimeEntryDAO {
         return null;
     }
     
-    public List<TimeEntry> findByDateRange(LocalDateTime start, LocalDateTime end) throws SQLException {
+    public List<TimeEntry> findByDateRangeAndUser(LocalDateTime start, LocalDateTime end, Long userId) throws SQLException {
         List<TimeEntry> entries = new ArrayList<>();
-        String sql = "SELECT * FROM time_entries WHERE start_time >= ? AND start_time <= ? ORDER BY start_time DESC";
+        String sql = "SELECT * FROM time_entries WHERE user_id = ? AND start_time >= ? AND start_time <= ? ORDER BY start_time DESC";
         
         try (Connection conn = dbManager.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             
-            pstmt.setString(1, start.toString());
-            pstmt.setString(2, end.toString());
+            pstmt.setLong(1, userId);
+            pstmt.setString(2, start.toString());
+            pstmt.setString(3, end.toString());
             
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
@@ -209,7 +221,9 @@ public class TimeEntryDAO {
         entry.setId(rs.getLong("id"));
         
         Long taskId = rs.getLong("task_id");
-        entry.setTask(taskDAO.findById(taskId));
+        if (!rs.wasNull()) {
+            entry.setTask(taskDAO.findById(taskId));
+        }
         
         entry.setStartTime(LocalDateTime.parse(rs.getString("start_time").replace(" ", "T")));
         
@@ -221,7 +235,9 @@ public class TimeEntryDAO {
         Integer durationMinutes = rs.getObject("duration_minutes", Integer.class);
         entry.setDurationMinutes(durationMinutes);
         
-        entry.setNotes(rs.getString("notes"));
+        String notes = rs.getString("notes");
+        entry.setNotes(notes);
+        entry.setDescription(notes);  // Also set description from notes
         entry.setBillable(rs.getInt("billable") == 1);
         entry.setIsRunning(rs.getInt("is_running") == 1);
         

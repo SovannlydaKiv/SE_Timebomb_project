@@ -8,7 +8,7 @@ public class DatabaseManager {
     private static String DB_PORT = System.getenv("DB_PORT") != null ? System.getenv("DB_PORT") : "3306";
     private static String DB_NAME = System.getenv("DB_NAME") != null ? System.getenv("DB_NAME") : "timetracker";
     private static String DB_USER = System.getenv("DB_USER") != null ? System.getenv("DB_USER") : "root";
-    private static String DB_PASSWORD = System.getenv("DB_PASSWORD") != null ? System.getenv("DB_PASSWORD") : "usAgil0v3r2468";
+    private static String DB_PASSWORD = System.getenv("DB_PASSWORD") != null ? System.getenv("DB_PASSWORD") : "password";
 
     private static String DB_URL = String.format(
         "jdbc:mysql://%s:%s/%s?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC",
@@ -55,6 +55,7 @@ public class DatabaseManager {
             stmt.execute("""
                 CREATE TABLE IF NOT EXISTS projects (
                     id BIGINT PRIMARY KEY AUTO_INCREMENT,
+                    user_id BIGINT NOT NULL,
                     name VARCHAR(255) NOT NULL,
                     description TEXT,
                     color_code VARCHAR(50),
@@ -65,6 +66,8 @@ public class DatabaseManager {
                     deadline DATETIME,
                     created_at DATETIME NOT NULL,
                     updated_at DATETIME NOT NULL,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                    INDEX idx_user (user_id),
                     INDEX idx_status (status),
                     INDEX idx_client (client)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
@@ -106,7 +109,8 @@ public class DatabaseManager {
             stmt.execute("""
                 CREATE TABLE IF NOT EXISTS time_entries (
                     id BIGINT PRIMARY KEY AUTO_INCREMENT,
-                    task_id BIGINT NOT NULL,
+                    user_id BIGINT NOT NULL,
+                    task_id BIGINT,
                     start_time DATETIME NOT NULL,
                     end_time DATETIME,
                     duration_minutes INT,
@@ -115,12 +119,25 @@ public class DatabaseManager {
                     is_running TINYINT(1) DEFAULT 0,
                     created_at DATETIME NOT NULL,
                     updated_at DATETIME NOT NULL,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
                     FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE,
+                    INDEX idx_user (user_id),
                     INDEX idx_task (task_id),
                     INDEX idx_start_time (start_time),
                     INDEX idx_is_running (is_running)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
             """);
+            
+            // Alter existing tables to add user_id if they don't have it
+            try {
+                stmt.execute("ALTER TABLE projects ADD COLUMN user_id BIGINT AFTER id");
+            } catch (SQLException ignored) {}
+            try {
+                stmt.execute("ALTER TABLE time_entries ADD COLUMN user_id BIGINT AFTER id");
+            } catch (SQLException ignored) {}
+            try {
+                stmt.execute("ALTER TABLE time_entries MODIFY COLUMN task_id BIGINT NULL");
+            } catch (SQLException ignored) {}
             
             System.out.println("MySQL Database initialized successfully!");
             System.out.println("Connected to: " + DB_URL);

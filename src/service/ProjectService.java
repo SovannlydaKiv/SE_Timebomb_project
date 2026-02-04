@@ -19,22 +19,22 @@ public class ProjectService {
         this.timeEntryDAO = new TimeEntryDAO();
     }
 
-    public Project createProject(String name, String description, String client) throws SQLException {
+    public Project createProject(String name, String description, String client, Long userId) throws SQLException {
         Project project = new Project(name, description);
         project.setClient(client);
-        return projectDAO.save(project);
+        return projectDAO.save(project, userId);
     }
 
     public Project getProject(Long id) throws SQLException {
         return projectDAO.findById(id);
     }
 
-    public List<Project> getAllProjects() throws SQLException {
-        return projectDAO.findAll();
+    public List<Project> getAllProjects(Long userId) throws SQLException {
+        return projectDAO.findAllByUser(userId);
     }
 
-    public List<Project> getActiveProjects() throws SQLException {
-        return projectDAO.findByStatus(ProjectStatus.ACTIVE);
+    public List<Project> getActiveProjects(Long userId) throws SQLException {
+        return projectDAO.findByStatusAndUser(ProjectStatus.ACTIVE, userId);
     }
 
     public List<Project> getProjectByClient(String client) throws SQLException {
