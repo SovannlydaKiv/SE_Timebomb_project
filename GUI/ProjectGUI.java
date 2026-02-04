@@ -8,6 +8,8 @@ import java.awt.event.*;
 import java.awt.geom.RoundRectangle2D;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Calendar;
+import java.time.LocalDateTime;
 import service.ProjectService;
 import service.TaskService;
 import model.*;
@@ -157,9 +159,9 @@ public class ProjectGUI extends JFrame {
         try {
             List<Project> projects;
             if ("All".equals(selectedStatus)) {
-                projects = projectService.getAllProjects();
+                projects = projectService.getAllProjects(UserSession.getUserId());
             } else {
-                projects = projectService.getAllProjects(); // Filter in memory
+                projects = projectService.getAllProjects(UserSession.getUserId()); // Filter in memory
             }
             
             for (Project p : projects) {
@@ -192,7 +194,7 @@ public class ProjectGUI extends JFrame {
         tableModel.setRowCount(0);
         
         try {
-            List<Project> projects = projectService.getAllProjects();
+            List<Project> projects = projectService.getAllProjects(UserSession.getUserId());
             for (Project p : projects) {
                 int taskCount = projectService.getTaskCount(p.getId());
                 String deadline = p.getDeadLine() != null ? p.getDeadLine().toLocalDate().toString() : "No deadline";
@@ -262,13 +264,18 @@ public class ProjectGUI extends JFrame {
             if (project == null) return;
             
             JDialog dlg = new JDialog(this, "Tasks for: " + project.getName(), true);
-            dlg.setSize(700, 500);
+            dlg.setSize(750, 500);
             dlg.setLocationRelativeTo(this);
             dlg.setLayout(new BorderLayout());
             
             // Task table
             String[] taskCols = { "ID", "Name", "Status", "Priority", "Est. Hours", "Due Date" };
-            DefaultTableModel taskModel = new DefaultTableModel(taskCols, 0);
+            DefaultTableModel taskModel = new DefaultTableModel(taskCols, 0) {
+                @Override
+                public boolean isCellEditable(int row, int column) {
+                    return false;
+                }
+            };
             
             List<Task> tasks = taskService.getTaskByProject(projectId);
             for (Task t : tasks) {
@@ -287,10 +294,51 @@ public class ProjectGUI extends JFrame {
             
             JTable taskTable = new JTable(taskModel);
             taskTable.setRowHeight(28);
+            taskTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
             JScrollPane scrollPane = new JScrollPane(taskTable);
             
-            // Add task button
+            // Button panel
             JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+            
+            JButton editTaskBtn = new JButton("Edit Task");
+            editTaskBtn.setBackground(new Color(251, 191, 36));
+            editTaskBtn.setForeground(Color.BLACK);
+            editTaskBtn.addActionListener(e -> {
+                int selectedRow = taskTable.getSelectedRow();
+                if (selectedRow < 0) {
+                    JOptionPane.showMessageDialog(dlg, "Please select a task to edit", "No Selection", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+                Long taskId = (Long) taskModel.getValueAt(selectedRow, 0);
+                openEditTaskDialog(taskId, taskModel, selectedRow);
+            });
+            
+            JButton deleteTaskBtn = new JButton("Delete Task");
+            deleteTaskBtn.setBackground(new Color(234, 67, 53));
+            deleteTaskBtn.setForeground(Color.WHITE);
+            deleteTaskBtn.addActionListener(e -> {
+                int selectedRow = taskTable.getSelectedRow();
+                if (selectedRow < 0) {
+                    JOptionPane.showMessageDialog(dlg, "Please select a task to delete", "No Selection", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+                Long taskId = (Long) taskModel.getValueAt(selectedRow, 0);
+                String taskName = (String) taskModel.getValueAt(selectedRow, 1);
+                int confirm = JOptionPane.showConfirmDialog(dlg, 
+                    "Are you sure you want to delete task '" + taskName + "'?", 
+                    "Confirm Delete", JOptionPane.YES_NO_OPTION);
+                if (confirm == JOptionPane.YES_OPTION) {
+                    try {
+                        taskService.deleteTask(taskId);
+                        taskModel.removeRow(selectedRow);
+                        loadProjects();
+                    } catch (SQLException ex) {
+                        JOptionPane.showMessageDialog(dlg, "Error deleting task: " + ex.getMessage(), 
+                            "Error", JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+            });
+            
             JButton addTaskBtn = new JButton("Add Task");
             addTaskBtn.setBackground(new Color(59, 130, 246));
             addTaskBtn.setForeground(Color.WHITE);
@@ -301,10 +349,12 @@ public class ProjectGUI extends JFrame {
             JButton closeBtn = new JButton("Close");
             closeBtn.addActionListener(e -> dlg.dispose());
             
+            btnPanel.add(editTaskBtn);
+            btnPanel.add(deleteTaskBtn);
             btnPanel.add(addTaskBtn);
             btnPanel.add(closeBtn);
             
-            dlg.add(new JLabel("  Tasks (Double-click project row to view)", SwingConstants.LEFT), BorderLayout.NORTH);
+            dlg.add(new JLabel("  Tasks (Select a task and click Edit to modify)", SwingConstants.LEFT), BorderLayout.NORTH);
             dlg.add(scrollPane, BorderLayout.CENTER);
             dlg.add(btnPanel, BorderLayout.SOUTH);
             dlg.setVisible(true);
@@ -315,20 +365,303 @@ public class ProjectGUI extends JFrame {
         }
     }
     
+    private void openEditTaskDialog(Long taskId, DefaultTableModel taskModel, int rowIndex) {
+        try {
+            Task task = taskService.getTask(taskId);
+            if (task == null) return;
+            
+            JDialog dlg = new JDialog(this, "Edit Task: " + task.getName(), true);
+            dlg.setSize(450, 450);
+            dlg.setLocationRelativeTo(this);
+            dlg.setLayout(new BorderLayout());
+            
+            JPanel form = new JPanel(new GridLayout(7, 2, 10, 10));
+            form.setBorder(new EmptyBorder(15, 15, 15, 15));
+            
+            JTextField nameField = new JTextField(task.getName());
+            JTextField descField = new JTextField(task.getDescription() != null ? task.getDescription() : "");
+            
+            double currentHours = task.getEstimationMinutes() != null ? task.getEstimationMinutes() / 60.0 : 1.0;
+            JSpinner hoursSpinner = new JSpinner(new SpinnerNumberModel(currentHours, 0.5, 500.0, 0.5));
+            
+            JComboBox<Priority> priorityBox = new JComboBox<>(Priority.values());
+            priorityBox.setSelectedItem(task.getPriority());
+            
+            JComboBox<TaskStatus> statusBox = new JComboBox<>(TaskStatus.values());
+            statusBox.setSelectedItem(task.getStatus());
+            
+            // Calendar date picker panel
+            JPanel datePanel = createDatePickerPanel(task.getDueDate());
+            
+            JCheckBox billableBox = new JCheckBox("", task.getBillable());
+            
+            form.add(new JLabel("Task Name:"));
+            form.add(nameField);
+            form.add(new JLabel("Description:"));
+            form.add(descField);
+            form.add(new JLabel("Estimated Hours:"));
+            form.add(hoursSpinner);
+            form.add(new JLabel("Priority:"));
+            form.add(priorityBox);
+            form.add(new JLabel("Status:"));
+            form.add(statusBox);
+            form.add(new JLabel("Due Date:"));
+            form.add(datePanel);
+            form.add(new JLabel("Billable:"));
+            form.add(billableBox);
+            
+            JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+            JButton saveBtn = new JButton("Save Changes");
+            saveBtn.setBackground(new Color(59, 130, 246));
+            saveBtn.setForeground(Color.WHITE);
+            JButton cancelBtn = new JButton("Cancel");
+            
+            saveBtn.addActionListener(e -> {
+                String name = nameField.getText().trim();
+                if (name.isEmpty()) {
+                    JOptionPane.showMessageDialog(dlg, "Task name is required", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                
+                try {
+                    task.setName(name);
+                    task.setDescription(descField.getText().trim());
+                    double hours = (Double) hoursSpinner.getValue();
+                    task.setEstimationMinutes((int) (hours * 60));
+                    task.setPriority((Priority) priorityBox.getSelectedItem());
+                    task.setStatus((TaskStatus) statusBox.getSelectedItem());
+                    task.setBillable(billableBox.isSelected());
+                    
+                    // Get date from the date picker panel
+                    LocalDateTime dueDate = getDateFromPanel(datePanel);
+                    task.setDueDate(dueDate);
+                    
+                    taskService.updateTask(task);
+                    
+                    // Update table row
+                    taskModel.setValueAt(task.getName(), rowIndex, 1);
+                    taskModel.setValueAt(task.getStatus(), rowIndex, 2);
+                    taskModel.setValueAt(task.getPriority(), rowIndex, 3);
+                    taskModel.setValueAt(String.format("%.1f", hours), rowIndex, 4);
+                    taskModel.setValueAt(dueDate != null ? dueDate.toLocalDate().toString() : "-", rowIndex, 5);
+                    
+                    dlg.dispose();
+                    JOptionPane.showMessageDialog(this, "Task updated successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+                    
+                } catch (SQLException ex) {
+                    JOptionPane.showMessageDialog(dlg, "Error updating task: " + ex.getMessage(), 
+                        "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            });
+            
+            cancelBtn.addActionListener(e -> dlg.dispose());
+            
+            btnPanel.add(cancelBtn);
+            btnPanel.add(saveBtn);
+            
+            dlg.add(form, BorderLayout.CENTER);
+            dlg.add(btnPanel, BorderLayout.SOUTH);
+            dlg.setVisible(true);
+            
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Error loading task: " + ex.getMessage(), 
+                "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+    
+    private JPanel createDatePickerPanel(LocalDateTime currentDate) {
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        
+        // Year spinner
+        int currentYear = currentDate != null ? currentDate.getYear() : java.time.LocalDate.now().getYear();
+        JSpinner yearSpinner = new JSpinner(new SpinnerNumberModel(currentYear, 2020, 2100, 1));
+        yearSpinner.setEditor(new JSpinner.NumberEditor(yearSpinner, "####"));
+        yearSpinner.setName("year");
+        
+        // Month combo
+        String[] months = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+        JComboBox<String> monthCombo = new JComboBox<>(months);
+        monthCombo.setName("month");
+        if (currentDate != null) {
+            monthCombo.setSelectedIndex(currentDate.getMonthValue() - 1);
+        } else {
+            monthCombo.setSelectedIndex(java.time.LocalDate.now().getMonthValue() - 1);
+        }
+        
+        // Day spinner
+        int currentDay = currentDate != null ? currentDate.getDayOfMonth() : java.time.LocalDate.now().getDayOfMonth();
+        JSpinner daySpinner = new JSpinner(new SpinnerNumberModel(currentDay, 1, 31, 1));
+        daySpinner.setName("day");
+        
+        // Calendar button to open a calendar popup
+        JButton calendarBtn = new JButton("📅");
+        calendarBtn.setToolTipText("Open Calendar");
+        calendarBtn.addActionListener(e -> {
+            showCalendarPopup(yearSpinner, monthCombo, daySpinner, calendarBtn);
+        });
+        
+        // Clear date button
+        JButton clearBtn = new JButton("✕");
+        clearBtn.setToolTipText("Clear Date");
+        clearBtn.setMargin(new Insets(2, 5, 2, 5));
+        clearBtn.addActionListener(e -> {
+            yearSpinner.setValue(java.time.LocalDate.now().getYear());
+            monthCombo.setSelectedIndex(java.time.LocalDate.now().getMonthValue() - 1);
+            daySpinner.setValue(java.time.LocalDate.now().getDayOfMonth());
+        });
+        
+        panel.add(yearSpinner);
+        panel.add(monthCombo);
+        panel.add(daySpinner);
+        panel.add(calendarBtn);
+        panel.add(clearBtn);
+        
+        return panel;
+    }
+    
+    private void showCalendarPopup(JSpinner yearSpinner, JComboBox<String> monthCombo, JSpinner daySpinner, JButton source) {
+        JDialog calendarDialog = new JDialog(this, "Select Date", true);
+        calendarDialog.setSize(300, 280);
+        calendarDialog.setLocationRelativeTo(source);
+        calendarDialog.setLayout(new BorderLayout());
+        
+        // Month/Year navigation
+        JPanel navPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        JButton prevMonth = new JButton("<");
+        JButton nextMonth = new JButton(">");
+        JLabel monthYearLabel = new JLabel();
+        monthYearLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        
+        Calendar cal = Calendar.getInstance();
+        cal.set(Calendar.YEAR, (Integer) yearSpinner.getValue());
+        cal.set(Calendar.MONTH, monthCombo.getSelectedIndex());
+        cal.set(Calendar.DAY_OF_MONTH, (Integer) daySpinner.getValue());
+        
+        // Calendar grid
+        JPanel calendarGrid = new JPanel(new GridLayout(7, 7, 2, 2));
+        calendarGrid.setBorder(new EmptyBorder(5, 10, 5, 10));
+        
+        Runnable updateCalendar = () -> {
+            calendarGrid.removeAll();
+            
+            String[] dayNames = {"Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"};
+            for (String dayName : dayNames) {
+                JLabel lbl = new JLabel(dayName, SwingConstants.CENTER);
+                lbl.setFont(new Font("Segoe UI", Font.BOLD, 11));
+                lbl.setForeground(Color.GRAY);
+                calendarGrid.add(lbl);
+            }
+            
+            Calendar temp = (Calendar) cal.clone();
+            temp.set(Calendar.DAY_OF_MONTH, 1);
+            int firstDayOfWeek = temp.get(Calendar.DAY_OF_WEEK) - 1;
+            int daysInMonth = temp.getActualMaximum(Calendar.DAY_OF_MONTH);
+            
+            // Empty cells before first day
+            for (int i = 0; i < firstDayOfWeek; i++) {
+                calendarGrid.add(new JLabel(""));
+            }
+            
+            // Day buttons
+            for (int day = 1; day <= daysInMonth; day++) {
+                JButton dayBtn = new JButton(String.valueOf(day));
+                dayBtn.setMargin(new Insets(2, 2, 2, 2));
+                dayBtn.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+                
+                final int selectedDay = day;
+                dayBtn.addActionListener(ev -> {
+                    yearSpinner.setValue(cal.get(Calendar.YEAR));
+                    monthCombo.setSelectedIndex(cal.get(Calendar.MONTH));
+                    daySpinner.setValue(selectedDay);
+                    calendarDialog.dispose();
+                });
+                
+                // Highlight current selection
+                if (day == (Integer) daySpinner.getValue() && 
+                    cal.get(Calendar.MONTH) == monthCombo.getSelectedIndex() &&
+                    cal.get(Calendar.YEAR) == (Integer) yearSpinner.getValue()) {
+                    dayBtn.setBackground(new Color(59, 130, 246));
+                    dayBtn.setForeground(Color.WHITE);
+                }
+                
+                calendarGrid.add(dayBtn);
+            }
+            
+            // Fill remaining cells
+            int totalCells = 42; // 6 rows * 7 days
+            int usedCells = firstDayOfWeek + daysInMonth;
+            for (int i = usedCells; i < totalCells; i++) {
+                calendarGrid.add(new JLabel(""));
+            }
+            
+            monthYearLabel.setText(new java.text.SimpleDateFormat("MMMM yyyy").format(cal.getTime()));
+            calendarGrid.revalidate();
+            calendarGrid.repaint();
+        };
+        
+        prevMonth.addActionListener(ev -> {
+            cal.add(Calendar.MONTH, -1);
+            updateCalendar.run();
+        });
+        
+        nextMonth.addActionListener(ev -> {
+            cal.add(Calendar.MONTH, 1);
+            updateCalendar.run();
+        });
+        
+        navPanel.add(prevMonth);
+        navPanel.add(monthYearLabel);
+        navPanel.add(nextMonth);
+        
+        updateCalendar.run();
+        
+        calendarDialog.add(navPanel, BorderLayout.NORTH);
+        calendarDialog.add(calendarGrid, BorderLayout.CENTER);
+        calendarDialog.setVisible(true);
+    }
+    
+    private LocalDateTime getDateFromPanel(JPanel datePanel) {
+        int year = 0, month = 0, day = 0;
+        
+        for (java.awt.Component comp : datePanel.getComponents()) {
+            if (comp instanceof JSpinner) {
+                JSpinner spinner = (JSpinner) comp;
+                if ("year".equals(spinner.getName())) {
+                    year = (Integer) spinner.getValue();
+                } else if ("day".equals(spinner.getName())) {
+                    day = (Integer) spinner.getValue();
+                }
+            } else if (comp instanceof JComboBox) {
+                JComboBox<?> combo = (JComboBox<?>) comp;
+                if ("month".equals(combo.getName())) {
+                    month = combo.getSelectedIndex() + 1;
+                }
+            }
+        }
+        
+        if (year > 0 && month > 0 && day > 0) {
+            return LocalDateTime.of(year, month, day, 23, 59);
+        }
+        return null;
+    }
+    
     private void openAddTaskDialog(Project project, DefaultTableModel taskModel) {
         JDialog dlg = new JDialog(this, "Add Task to " + project.getName(), true);
-        dlg.setSize(400, 350);
+        dlg.setSize(450, 420);
         dlg.setLocationRelativeTo(this);
         dlg.setLayout(new BorderLayout());
         
-        JPanel form = new JPanel(new GridLayout(5, 2, 10, 10));
+        JPanel form = new JPanel(new GridLayout(6, 2, 10, 10));
         form.setBorder(new EmptyBorder(15, 15, 15, 15));
         
         JTextField nameField = new JTextField();
         JTextField descField = new JTextField();
-        JSpinner hoursSpinner = new JSpinner(new SpinnerNumberModel(1.0, 0.5, 100.0, 0.5));
+        JSpinner hoursSpinner = new JSpinner(new SpinnerNumberModel(1.0, 0.5, 500.0, 0.5));
         JComboBox<Priority> priorityBox = new JComboBox<>(Priority.values());
         JComboBox<TaskStatus> statusBox = new JComboBox<>(TaskStatus.values());
+        
+        // Calendar date picker for due date
+        JPanel dueDatePanel = createDatePickerPanel(null);
         
         form.add(new JLabel("Task Name:"));
         form.add(nameField);
@@ -340,6 +673,8 @@ public class ProjectGUI extends JFrame {
         form.add(priorityBox);
         form.add(new JLabel("Status:"));
         form.add(statusBox);
+        form.add(new JLabel("Due Date:"));
+        form.add(dueDatePanel);
         
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton saveBtn = new JButton("Save");
@@ -365,16 +700,27 @@ public class ProjectGUI extends JFrame {
                 task.setPriority((Priority) priorityBox.getSelectedItem());
                 task.setStatus((TaskStatus) statusBox.getSelectedItem());
                 
-                taskService.creatTask(name, descField.getText().trim(), project, (Priority) priorityBox.getSelectedItem());
+                // Get due date from calendar picker
+                LocalDateTime dueDate = getDateFromPanel(dueDatePanel);
+                task.setDueDate(dueDate);
+                
+                // Create task via service
+                Task createdTask = taskService.creatTask(name, descField.getText().trim(), project, (Priority) priorityBox.getSelectedItem());
+                // Update the created task with additional fields
+                createdTask.setEstimationMinutes((int) (hours * 60));
+                createdTask.setStatus((TaskStatus) statusBox.getSelectedItem());
+                createdTask.setDueDate(dueDate);
+                taskService.updateTask(createdTask);
                 
                 // Add to table
+                String dueDateStr = dueDate != null ? dueDate.toLocalDate().toString() : "-";
                 taskModel.addRow(new Object[] {
-                    task.getId(),
-                    task.getName(),
-                    task.getStatus(),
-                    task.getPriority(),
+                    createdTask.getId(),
+                    createdTask.getName(),
+                    createdTask.getStatus(),
+                    createdTask.getPriority(),
                     String.format("%.1f", hours),
-                    "-"
+                    dueDateStr
                 });
                 
                 dlg.dispose();
@@ -471,7 +817,7 @@ public class ProjectGUI extends JFrame {
                 project.setBudget((Double) budgetSpinner.getValue());
                 project.setHourlyRate((Double) rateSpinner.getValue());
                 
-                projectService.createProject(name, descField.getText().trim(), clientField.getText().trim());
+                projectService.createProject(name, descField.getText().trim(), clientField.getText().trim(), UserSession.getUserId());
                 
                 dlg.dispose();
                 loadProjects();
@@ -560,7 +906,7 @@ public class ProjectGUI extends JFrame {
             setContentAreaFilled(false);
             setBorderPainted(false);
             setOpaque(false);
-            setBorder(new EmptyBorder(6, 14, 6, 14)); // 👈 smaller padding
+            setBorder(new EmptyBorder(6, 14, 6, 14));
         }
 
         @Override
@@ -577,14 +923,6 @@ public class ProjectGUI extends JFrame {
             super.paintComponent(g);
             g2.dispose();
         }
-    }
-
-    private void openProjectForm() {
-        new ProjectForm(this).setVisible(true);
-    }
-
-    private void showMessage(String action) {
-        JOptionPane.showMessageDialog(this, action + " clicked");
     }
 
     public static void main(String[] args) {
