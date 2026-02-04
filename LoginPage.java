@@ -29,7 +29,14 @@ public class LoginPage extends JFrame {
     private JPanel createMainPanel() {
         JPanel wrapper = new JPanel(new GridBagLayout());
         wrapper.setOpaque(false);
-        wrapper.add(createLoginCard());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 1.0;
+        gbc.weighty = 1.0;
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.anchor = GridBagConstraints.CENTER;
+        wrapper.add(createLoginCard(), gbc);
         return wrapper;
     }
 
@@ -38,10 +45,12 @@ public class LoginPage extends JFrame {
         card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
         card.setBackground(Color.WHITE);
         card.setBorder(new CompoundBorder(
-                new LineBorder(new Color(229, 231, 235), 1, true),
-                new EmptyBorder(50, 50, 50, 50)));
-        card.setPreferredSize(new Dimension(480, 600));
-        card.setMaximumSize(new Dimension(480, 600));
+            new LineBorder(new Color(229, 231, 235), 1, true),
+            new EmptyBorder(24, 20, 24, 20)));
+        card.setAlignmentX(Component.CENTER_ALIGNMENT);
+        card.setMinimumSize(new Dimension(360, 300));
+        card.setPreferredSize(new Dimension(700, 640));
+        card.setMaximumSize(new Dimension(700, Integer.MAX_VALUE));
 
         // Header
         JPanel headerPanel = new JPanel();
@@ -101,7 +110,8 @@ public class LoginPage extends JFrame {
         loginButton.setFocusPainted(false);
         loginButton.setBorderPainted(false);
         loginButton.setAlignmentX(Component.CENTER_ALIGNMENT);
-        loginButton.setMaximumSize(new Dimension(Integer.MAX_VALUE, 45));
+        loginButton.setPreferredSize(new Dimension(260, 45));
+        loginButton.setMaximumSize(new Dimension(320, 45));
         loginButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         
         loginButton.addMouseListener(new MouseAdapter() {
@@ -155,6 +165,22 @@ public class LoginPage extends JFrame {
         signUp.setForeground(new Color(59, 130, 246));
         signUp.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
+        signUp.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                dispose();
+                SwingUtilities.invokeLater(() -> new SignUpPage().setVisible(true));
+            }
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                signUp.setText("<html><u>Sign up</u></html>");
+            }
+            @Override
+            public void mouseExited(MouseEvent e) {
+                signUp.setText("Sign up");
+            }
+        });
+
         signupPanel.add(noAccount);
         signupPanel.add(signUp);
 
@@ -180,20 +206,20 @@ public class LoginPage extends JFrame {
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         panel.setOpaque(false);
-        panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 80));
-        panel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        panel.setMaximumSize(new Dimension(660, 80));
+        panel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         JLabel label = new JLabel(labelText);
         label.setFont(new Font("Segoe UI", Font.BOLD, 15));
         label.setForeground(new Color(55, 65, 81));
-        label.setAlignmentX(Component.LEFT_ALIGNMENT);
+        label.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         inputField.setFont(new Font("Segoe UI", Font.PLAIN, 15));
         inputField.setBorder(new CompoundBorder(
-                new LineBorder(new Color(209, 213, 219), 1, true),
-                new EmptyBorder(12, 15, 12, 15)));
-        inputField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
-        inputField.setAlignmentX(Component.LEFT_ALIGNMENT);
+            new LineBorder(new Color(209, 213, 219), 1, true),
+            new EmptyBorder(12, 15, 12, 15)));
+        inputField.setMaximumSize(new Dimension(640, 50));
+        inputField.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         inputField.addFocusListener(new FocusAdapter() {
             @Override
