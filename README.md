@@ -418,7 +418,10 @@ timetracker-v3.0/
 
 This project was developed by a team of Software Engineering students:
 
-- **Sovannlyda Kiv** - [@SovannlydaKiv](https://github.com/SovannlydaKiv)
+- **Hen Chhorda Vattey** - [@Vattey26](https://github.com/Vattey26)
+- **Kiv Sovannlyda** - [@SovannlydaKiv](https://github.com/SovannlydaKiv)
+- **Thai Monika** - [@mnikaaa](https://github.com/mnikaaa)
+- **Sao Dali Incao** - [@SaoDaliInaco](https://github.com/SaoDaliInaco)
 - Additional team members who contributed to different branches
 
 ## 📄 License
